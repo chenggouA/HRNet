@@ -1,0 +1,44 @@
+
+
+
+train:
+  batch_size: 32
+  epoch: 100
+  num_workers: 8
+  device: cuda
+  momentum: 0.9
+  Init_lr: 0.001            
+  optimizer: sgd # sgd, adam
+  root_data: D:\code\dataset\person_keypoints
+  lr_decay_type: cos # cos, step
+  nbs: 16 # 基准batch_size大小
+  output: output  # 模型输出位置
+  save_interval: 3 # 模型保存间隔
+  
+  # resume: output\20241025_222014\best.pth
+
+  pretrained: true
+  
+
+base_channel: 18
+num_key_points: 17
+seed: 42
+device: cuda
+
+predict:
+  device: cuda
+  image_path: imgs/person.png
+  model_path: output\20241025_224311\best.pth
+  num_workers: 4
+
+  batch_size: 4
+
+
+input_shape: 
+  - 256 # h
+  - 192 # w
+
+
+
+
+    
