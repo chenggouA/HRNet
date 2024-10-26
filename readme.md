@@ -13,6 +13,13 @@
 
 [下载链接](https://pan.quark.cn/s/c73c2a401d1d)
 
+
+## 预训练模型
+- hrnet_w18_pretrained.pth
+- hrnet_w30_pretrained.pth
+解压后放到`mode_data`文件夹
+[下载链接](https://pan.quark.cn/s/b0235b1f041c)
+
 ## 关键点检测损失函数
 
 针对关键点检测的损失函数，通常使用均方误差（MSE）来度量预测坐标与真实坐标之间的差异。损失函数可以表示为：
