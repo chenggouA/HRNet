@@ -144,7 +144,7 @@ def main(config: Config):
 
     # 获取数据集
     train_transforms = Compose([
-        LetterBox(input_shape), KeypointToHeatMap(), ToTensor(), Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+        GeometricTransform(), LetterBox(input_shape), KeypointToHeatMap(), ToTensor(), Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     ])
     train_dataset = keypoints_dataset(f"{root_data}/train", train_transforms) 
     train_dataLoader = DataLoader(train_dataset, 

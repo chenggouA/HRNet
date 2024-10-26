@@ -3,6 +3,22 @@ from numpy import ndarray
 import PIL
 from PIL import ImageDraw, ImageFont
 from PIL.Image import Image
+import matplotlib.pylab as plt
+
+def plot_heatmap(image, heatmap, kps, kps_weights):
+    for kp_id in range(len(kps_weights)):
+        if kps_weights[kp_id] > 0:
+            plt.subplot(1, 2, 1)
+            plt.imshow(image)
+            plt.plot(*kps[kp_id].tolist(), "ro")
+            plt.title("image")
+            plt.subplot(1, 2, 2)
+            plt.imshow(heatmap[kp_id], cmap=plt.cm.Blues)
+            plt.colorbar(ticks=[0, 1])
+            plt.title(f"kp_id: {kp_id}")
+            plt.show()
+    
+    plt.close("all")
 
 
 point_color = [(240, 2, 127), (240, 2, 127), (240, 2, 127),

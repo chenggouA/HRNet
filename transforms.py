@@ -2,6 +2,8 @@ from typing import Tuple
 from torchvision.transforms import functional as F
 import numpy as np
 import cv2
+import random
+from draw import plot_heatmap
 import torch
 class Compose(object):
     """组合多个transform函数"""
@@ -161,8 +163,68 @@ class KeypointToHeatMap(object):
             kps_weights = np.multiply(kps_weights, self.kps_weights)
 
         # plot_heatmap(image, heatmap, kps, kps_weights)
+        
 
         target["heatmap"] = torch.as_tensor(heatmap, dtype=torch.float32)
         target["kps_weights"] = torch.as_tensor(kps_weights, dtype=torch.float32)
 
         return image, target
+
+
+
+class GeometricTransform(object):
+    def __init__(self, scale=(0.8, 1.2), rotation=30, translation=(0.2, 0.2), shear=10):
+        self.scale = scale  # 缩放比例范围
+        self.rotation = rotation  # 旋转角度范围（度数）
+        self.translation = translation  # 平移范围（图像尺寸的比例）
+        self.shear = shear  # 剪切角度范围（度数）
+
+    def __call__(self, image, target):
+        orig_shape = image.shape[:2]  # [height, width]
+        center = (orig_shape[1] / 2, orig_shape[0] / 2)  # 图像中心
+
+        # 随机生成缩放因子、旋转角度、平移和剪切
+        scale_factor = random.uniform(self.scale[0], self.scale[1])
+        rotation_angle = random.uniform(-self.rotation, self.rotation)
+        tx = random.uniform(-self.translation[0], self.translation[0]) * orig_shape[1]
+        ty = random.uniform(-self.translation[1], self.translation[1]) * orig_shape[0]
+        shear_angle = random.uniform(-self.shear, self.shear)
+
+        # 计算变换矩阵
+        M_scale_rotate = cv2.getRotationMatrix2D(center, rotation_angle, scale_factor)
+        M_translate = np.array([[1, 0, tx], [0, 1, ty]], dtype=np.float32)
+        M_shear = np.array([[1, np.tan(np.radians(shear_angle)), 0],
+                            [np.tan(np.radians(shear_angle)), 1, 0]], dtype=np.float32)
+
+        # 组合所有变换
+        M = M_shear @ np.vstack([M_scale_rotate, [0, 0, 1]]) @ np.vstack([M_translate, [0, 0, 1]])
+        M = M[:2, :]  # 转换为 2x3 矩阵
+
+        # 对图像应用几何变换
+        transformed_image = cv2.warpAffine(image, M, (orig_shape[1], orig_shape[0]), flags=cv2.INTER_LINEAR)
+
+        # 更新目标数据中的关键点和边界框
+        if target is not None:
+            # 更新关键点坐标
+            keypoints = target['keypoints']
+            updated_keypoints = []
+            updated_visibility = []  # 用于存储更新后的可见性
+            
+            for (x, y), visible in zip(keypoints, target['visible']):
+                if visible > 0.5:
+                    # 使用变换矩阵更新坐标
+                    new_x, new_y = M @ [x, y, 1]
+                    if 0 <= new_x < orig_shape[1] and 0 <= new_y < orig_shape[0]:  # 检查是否在图像区域内
+                        updated_keypoints.append([int(new_x), int(new_y)])
+                        updated_visibility.append(1)  # 保持可见
+                    else:
+                        updated_keypoints.append([0, 0])  # 超出边界则设为(0,0)
+                        updated_visibility.append(0)  # 标记为不可见
+                else:
+                    updated_keypoints.append([0, 0])  # 不可见关键点保持(0,0)
+                    updated_visibility.append(0)  # 保持不可见
+            
+            target['keypoints'] = np.array(updated_keypoints)
+            target['visible'] = np.array(updated_visibility)
+
+        return transformed_image, target
